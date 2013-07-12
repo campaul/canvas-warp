@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="reveal.js/css/reveal.min.css">
+        <link rel="stylesheet" href="reveal.js/css/theme/default.css" id="theme">
+        <link rel="stylesheet" href="reveal.js/lib/css/zenburn.css">
+    </head>
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section>
+                    <h1>HTML5 Canvas</h1>
+                    <p>Making it go really fast.</p>
+                </section>
+                <section>
+                    <h1>Why Me?</h1>
+                    <p>I co-created <a href="http://literallycanvas.com">LiterallyCanvas</a>.</p>
+                </section>
+                <section>
+                    <h1>The Rendering Process</h1>
+                </section>
+                <section>
+                    <h2>Old Graphics</h2>
+                    <p>Program &rArr; Video Buffer &rArr; Screen</p>
+                </section>
+                <section>
+                    <h2>Modern Graphics</h2>
+                    <p>Program &rArr; Library &rArr; Kernel &rArr; <strong style="color: #71e9f4">Graphics Card</strong> &rArr; Screen</p>
+                </section>
+                <section>
+                    <h2>Why does matter?</h2>
+                    <p>You have &lt;17ms to render a frame. It pays to know what you're asking the computer to do.</p>
+                </section>
+                <section>
+                    <h1>Canvas 101</h1>
+                </section>
+                <section>
+                    <h2>Creating a Canvas</h2>
+                    <pre>
+                        <code class="html">
+&lt;canvas width=&quot;250&quot; height=&quot;250&quot; style=&quot;width: 500px; height: 500px&quot;&gt;
+    You see this text if your browser dosent support canvas.
+&lt;/canvas&gt;
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>Drawing (Graphics Context)</h2>
+                    <pre>
+                        <code class="javascript">
+var canvas = document.getElementById('the-basics');
+var context = canvas.getContext('2d');
+
+// Clear the canvas
+context.clearRect(0, 0, canvas.width, canvas.height);
+
+// fillStyle and strokeStyle are CSS
+context.fillStyle = 'rgba(255, 0, 0, 0.5)';
+context.strokeStyle = 'rgba(0, 255, 255, 1)';
+
+// Draw a stroked rectangle
+context.strokeRect(x, y, width, height);
+
+// Draw a filled triangle
+context.beginPath();
+context.moveTo(x, y);
+context.lineTo(x + width, y);
+context.lineTo(x + width, y + height);
+context.fill();
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <canvas id="the-basics" width="300px" height="300px" style="background-color: #fff"></canvas>
+                    <script>
+                        (function() {
+                            var canvas = document.getElementById('the-basics');
+                            var context = canvas.getContext('2d');
+
+                            // Clear the canvas
+                            context.clearRect(0, 0, canvas.width, canvas.height);
+
+                            // fillStyle and strokeStyle are CSS
+                            context.fillStyle = 'rgba(255, 0, 0, 0.5)';
+                            context.strokeStyle = 'rgba(0, 0, 255, 1)';
+
+                            // Draw a stroked rectangle
+                            context.strokeRect(100, 100, 100, 100);
+
+                            // Draw a filled triangle
+                            context.beginPath();
+                            context.moveTo(100, 100);
+                            context.lineTo(200, 100);
+                            context.lineTo(200, 200);
+                            context.fill();
+                        })();
+                    </script>
+                </section>
+                <section>
+                    <h1>Pixels are the Enemy</h1>
+                </section>
+                <section>
+                    <h2>Doing it Manually</h2>
+                    <pre>
+                        <code class="javascript">
+var data = context.createImageData(canvas.width, canvas.height);
+
+for (var x = 0; x < data.width; x++) {
+    for (var y = 0; y < data.height; y++) {
+        var index = (y * data.width + x) * 4;
+        
+        data.data[index + 0] = r;
+        data.data[index + 1] = g;
+        data.data[index + 2] = b;
+        data.data[index + 3] = 255;
+    }
+}
+
+context.putImageData(data, 0, 0);
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <canvas id="pixels-manual" width="1000" height="1000"></canvas>
+                    <script>
+                        (function() {
+                            var running = false;
+                            var canvas = document.getElementById('pixels-manual');
+                            var context = canvas.getContext('2d');
+                            
+                            canvas.addEventListener('click', function() {
+                               running = !running;
+                               requestAnimationFrame(draw);
+                            });
+                            
+                            var color = 0,
+                                velocity = 1;
+                        
+                            var draw = function() {
+                                color = color + velocity;
+                                
+                                if (color < 0) {
+                                    color = 0;
+                                    velocity = 1;
+                                }
+                                
+                                if (color > 255) {
+                                    color = 255;
+                                    velocity = -1;
+                                }
+                            
+                                var data = context.createImageData(canvas.width, canvas.height);
+
+                                for (var x = 0; x < data.width; x++) {
+                                    for (var y = 0; y < data.height; y++) {
+                                        var index = (y * data.width + x) * 4;
+                                        
+                                        data.data[index + 0] = color;
+                                        data.data[index + 1] = color;
+                                        data.data[index + 2] = color;
+                                        data.data[index + 3] = 255;
+                                    }
+                                }
+
+                                context.putImageData(data, 0, 0);
+                                
+                                if (running) {
+                                    requestAnimationFrame(draw);
+                                }
+                            } 
+                        })();
+                    </script>
+                </section>
+                <section>
+                    <h2>Letting the System do it</h2>
+                    <pre>
+                        <code class="javascript">
+context.fillSyle = 'rgba(' + r + ',' + g + ',' + b + ', 1)';
+context.fillRect(0, 0, canvas.width, canvas.height);
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <canvas id="pixels-system" width="1000" height="1000"></canvas>
+                    <script>
+                        (function() {
+                            var running = false;
+                            var canvas = document.getElementById('pixels-system');
+                            var context = canvas.getContext('2d');
+                            
+                            canvas.addEventListener('click', function() {
+                               running = !running;
+                               requestAnimationFrame(draw);
+                            });
+                            
+                            var color = 0,
+                                velocity = 1;
+                        
+                            var draw = function() {
+                                color = color + velocity;
+                                
+                                if (color < 0) {
+                                    color = 0;
+                                    velocity = 1;
+                                }
+                                
+                                if (color > 255) {
+                                    color = 255;
+                                    velocity = -1;
+                                }
+                            
+                                context.fillStyle = 'rgba(' + color + ',' + color + ',' + color + ',1)'
+                                context.fillRect(0, 0, canvas.width, canvas.height);
+                                
+                                if (running) {
+                                    requestAnimationFrame(draw);
+                                }
+                            } 
+                        })();
+                    </script>
+                </section>
+                <section>
+                    <h1>State Changes and Batching</h1>
+                </section>
+                <section>
+                    <h2>Checkerboard: A Naive Example</h2>
+                    <pre>
+                        <code class="javascript">
+for (var x = 0; x < canvas.width; x=x+10) {
+    for (var y = 0; y < canvas.height; y=y+10) {
+        if ((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2) {
+            context.fillStyle = "#222";
+        } else {
+            context.fillStyle = "#666";
+        }
+        
+        context.fillRect(x, y, 10, 10);
+    }
+}
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <canvas id="checkerboard" width="1000" height="1000"></canvas>
+                    <script>
+                        (function() {
+                            var running = false;
+                            var canvas = document.getElementById('checkerboard');
+                            var context = canvas.getContext('2d');
+                            
+                            canvas.addEventListener('click', function() {
+                               running = !running;
+                               requestAnimationFrame(draw);
+                            });
+                        
+                            context.scale(8, 8);
+                        
+                            var draw = function() {
+                                context.clearRect(0, 0, 1000, 1000);
+                                
+                                for (var x = 0; x < canvas.width; x=x+10) {
+                                    for (var y = 0; y < canvas.height; y=y+10) {
+                                        if ((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2) {
+                                            context.fillStyle = "#222";
+                                        } else {
+                                            context.fillStyle = "#666";
+                                        }
+                                        
+                                        context.fillRect(x, y, 10, 10);
+                                    }
+                                }
+                                
+                                if (running) {
+                                    requestAnimationFrame(draw);
+                                }
+                            } 
+                        })();
+                    </script>
+                </section>
+                <section>
+                    <h2>Checkerboard: Minimize Context Changes</h2>
+                    <pre>
+                        <code class="javascript">
+context.fillStyle = "#222";
+                        
+for (var x = 0; x < canvas.width; x=x+10) {
+    for (var y = 0; y < canvas.height; y=y+10) {
+        if ((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2) {
+            context.fillRect(x, y, 10, 10);
+        }
+    }
+}
+
+context.fillStyle = "#666";
+
+for (var x = 0; x < canvas.width; x=x+10) {
+    for (var y = 0; y < canvas.height; y=y+10) {
+        if (!((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2)) {
+            context.fillRect(x, y, 10, 10);
+        }
+    }
+}
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <canvas id="checkerboard-state" width="1000" height="1000"></canvas>
+                    <script>
+                        (function() {
+                            var running = false;
+                            var canvas = document.getElementById('checkerboard-state');
+                            var context = canvas.getContext('2d');
+                            
+                            canvas.addEventListener('click', function() {
+                               running = !running;
+                               requestAnimationFrame(draw);
+                            });
+                        
+                            context.scale(8, 8);
+                        
+                            var draw = function() {
+                                context.clearRect(0, 0, 1000, 1000);
+                                
+                                context.fillStyle = "#222";
+                                
+                                for (var x = 0; x < canvas.width; x=x+10) {
+                                    for (var y = 0; y < canvas.height; y=y+10) {
+                                        if ((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2) {
+                                            context.fillRect(x, y, 10, 10);
+                                        }
+                                    }
+                                }
+                                
+                                context.fillStyle = "#666";
+                                
+                                for (var x = 0; x < canvas.width; x=x+10) {
+                                    for (var y = 0; y < canvas.height; y=y+10) {
+                                        if (!((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2)) {
+                                            context.fillRect(x, y, 10, 10);
+                                        }
+                                    }
+                                }
+                                
+                                if (running) {
+                                    requestAnimationFrame(draw);
+                                }
+                            } 
+                        })();
+                    </script>
+                </section>
+                <section>
+                    <h2>Checkerboard: Batch Draw Operations</h2>
+                    <pre>
+                        <code class="javascript">
+context.fillStyle = "#222";
+context.beginPath();
+
+for (var x = 0; x < canvas.width; x=x+10) {
+    for (var y = 0; y < canvas.height; y=y+10) {
+        if ((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2) {
+            context.moveTo(x, y);
+            context.lineTo(x + 10, y);
+            context.lineTo(x + 10, y + 10);
+            context.lineTo(x, y + 10);
+        }
+    }
+}
+
+context.fill();
+
+context.fillStyle = "#666";
+context.beginPath();
+
+for (var x = 0; x < canvas.width; x=x+10) {
+    for (var y = 0; y < canvas.height; y=y+10) {
+        if (!((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2)) {
+            context.moveTo(x, y);
+            context.lineTo(x + 10, y);
+            context.lineTo(x + 10, y + 10);
+            context.lineTo(x, y + 10);
+        }
+    }
+}
+
+context.fill(); 
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <canvas id="checkerboard-batch" width="1000" height="1000"></canvas>
+                    <script>
+                        (function() {
+                            var running = false;
+                            var canvas = document.getElementById('checkerboard-batch');
+                            var context = canvas.getContext('2d');
+                            
+                            canvas.addEventListener('click', function() {
+                               running = !running;
+                               requestAnimationFrame(draw);
+                            });
+                            
+                            context.scale(8, 8);
+                        
+                            var draw = function() {
+                                context.clearRect(0, 0, 1000, 1000);
+                                
+                                context.fillStyle = "#222";
+                                context.beginPath();
+                                
+                                for (var x = 0; x < canvas.width; x=x+10) {
+                                    for (var y = 0; y < canvas.height; y=y+10) {
+                                        if ((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2) {
+                                            context.moveTo(x, y);
+                                            context.lineTo(x + 10, y);
+                                            context.lineTo(x + 10, y + 10);
+                                            context.lineTo(x, y + 10);
+                                        }
+                                    }
+                                }
+                                
+                                context.fill();
+                                
+                                context.fillStyle = "#666";
+                                context.beginPath();
+                                
+                                for (var x = 0; x < canvas.width; x=x+10) {
+                                    for (var y = 0; y < canvas.height; y=y+10) {
+                                        if (!((x / 10 + (y / 10 % 2 ? 1 : 0)) % 2)) {
+                                            context.moveTo(x, y);
+                                            context.lineTo(x + 10, y);
+                                            context.lineTo(x + 10, y + 10);
+                                            context.lineTo(x, y + 10);
+                                        }
+                                    }
+                                }
+                                
+                                context.fill();
+                                
+                                if (running) {
+                                    requestAnimationFrame(draw);
+                                }
+                            } 
+                        })();
+                    </script>
+                </section>
+                <section>
+                    <h2>Wait, did that get slower?</h2>
+                </section>
+                <section>
+                    <h1>Offscreen Rendering</h1>
+                </section>
+                <section>
+                    <h2>Creating a Buffer</h2>
+                    <pre>
+                        <code class="javascript">
+var offscreenBuffer = document.createElement('canvas');
+offscreenBuffer.width = 640;
+offscreenBuffer.height = 480;
+                        </code>
+                    </pre>
+                    <h2>Drawing to Another Canvas</h2>
+                    <pre>
+                        <code class="javascript">
+context.drawImage(offscreenBuffer, 0, 0);
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>The cost of a Canvas</h2>
+                    <p>640 x 480 x 4 = ~1.17MB</p>
+                    <p>1920 x 1080 x 4 = ~7.91MB</p>
+                </section>
+                <section>
+                    <h2>Things to Cache</h2>
+                    <ul>
+                        <li>shadow blur</li>
+                        <li>text</li>
+                        <li>scaled images</li>
+                        <li>things that don't change</li>
+                    </ul>
+                </section>
+                <section>
+                    <h1>Canvas Tricks</h1>
+                </section>
+                <section>
+                    <h2>CSS Background</h2>
+                    <p>Canvas is a DOM element after all</p>
+                </section>
+                <section>
+                    <h2>Stack Canvases for Faster Compositing</h2>
+                    <p>Yes, this is crazy</p>
+                </section>
+                <section>
+                    <h2>Width Hack</h2>
+                    <p>Don't use it</p>
+                    <pre>
+                        <code class="javascript">
+canvas.width = canvas.width
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>Use Integer Coordinates</h2>
+                    <p>Unless you want fuzzy images...</p>
+                    <img src="img/bunny.png"></img>
+                    <a href="http://seb.ly/2011/02/html5-canvas-sprite-optimisation/">http://seb.ly/2011/02/html5-canvas-sprite-optimisation/</a>
+                </section>
+                <section>
+                    <h2>Integer Casting Hacks</h2>
+                    <pre>
+                        <code class="javascript">
+// With a bitwise or.
+rounded = (0.5 + somenum) | 0;
+// A double bitwise not.
+rounded = ~~ (0.5 + somenum);
+// Finally, a left bitwise shift.
+rounded = (0.5 + somenum) << 0;
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h1>Animation</h1>
+                </section>
+                <section>
+                    <h2>Manually</h2>
+                    <pre>
+                        <code class="javascript">
+function myAnimation() {
+    var time = Date.now();
+    // Do stuff
+    setTimeout(myAnimation, 1000/60);
+}
+
+myAnimation();
+                        </code>
+                    </pre>
+                </section>
+                                <section>
+                    <h2>Manually (Slightly Better)</h2>
+                    <pre>
+                        <code class="javascript">
+var frameTime = 1000/60;
+                        
+function myAnimation() {
+    var time = Date.now();
+    // Do stuff
+    var nextFrame = (time % frameTime + 1) * frameTime;
+    setTimeout(myAnimation, nextFrame - time);
+}
+
+myAnimation();
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>requestAnimationFrame</h2>
+                    <pre>
+                        <code class="javascript">
+function myAnimation(time) {
+    // Do stuff
+    requestAnimationFrame(myAnimation);
+}
+
+requestAnimationFrame(myAnimation);
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>But I only Want the Delta</h2>
+                    <pre>
+                        <code class="javascript">
+function animate(fn) {
+    var lastFrame;
+
+    var wrapped = function(time) {
+        lastFrame = lastFrame || time;
+        var delta = time - lastFrame();
+        lastFrame = time;
+
+        fn(delta, time);
+        
+        requestAnimationFrame(wrapped);
+    };
+    
+    requestAnimationFrame(wrapped);
+}
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h2>Much Cleaner Animation</h2>
+                    <pre>
+                        <code class="javascript">
+animate(function(delta, time) {
+    // Do stuff
+});
+                        </code>
+                    </pre>
+                </section>
+                <section>
+                    <h1>Other Options</h1>
+                    <h2>If you can't make canvas any faster</h2>
+                </section>
+                <section>
+                    <h2>Avoid Garbage Collection</h2>
+                    <h3>It can take longer than 17ms</h3>
+                    <ul>
+                        <li>Reuse objects</li>
+                        <li>Avoid creating temp objects</li>
+                        <li><a href="https://www.scirra.com/blog/76/how-to-write-low-garbage-real-time-javascript">How to write low garbage real-time Javascript</a></li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>asm.js</h2>
+                    <ul>
+                        <li>Subset of JavaScript</li>
+                        <li>Used as Compile Target for Languages like C/C++</li>
+                        <li>Supported in Firefox Nightly</li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Web Workers</h2>
+                    <ul>
+                        <li>Each Web Worker represents an actual Thread</li>
+                        <li>Can only communicate via message passing</li>
+                        <pre>
+                            <code class="javascrip">
+var myWorker = new Worker("my_task.js");
+
+myWorker.addEventListener("message", function (oEvent) {
+  console.log("Called back by the worker!\n");
+}, false);
+
+myWorker.postMessage(""); // start the worker.
+                            </code>
+                        </pre>
+                    </ul>
+                    <p><a href="https://developer.mozilla.org/en-US/docs/Web/Guide/Performance/Using_web_workers">MDN: Using Web Workers</a></p>
+                </section>
+                <section>
+                    <h2>WebGL</h2>
+                    <h3>Pros: (Aside from being hella fast)</h3>
+                    <ul>
+                        <li>JavaScript bindings for OpenGL ES 2.0</li>
+                        <li>Allows you to write shaders</li>
+                        <li>3D Support</li>
+                    </ul>
+                    <h3>Cons:</h3>
+                    <ul>
+                        <li>Requires you to write shaders</li>
+                        <li>Hard to debug</li>
+                        <li>Some compatibility issues (Linux + AMD)</li>
+                    </ul>
+                </section>
+                <section>
+                    <h1>Bonus: Rolling Your Own Splines</h1>
+                    <h2>Because Bezier is hard to pronounce</h2>
+                    <p>Thanks to <a href="http://www.gvu.gatech.edu/people/official/jarek/">Jarek Rossignac</a></p>
+                </section>
+                <section>
+                    <h2>Refine</h2>
+                    <h3>Insert midpoints between existing points</h3>
+                    <img src="img/refine.png">
+                </section>
+                <section>
+                    <h2>Dual</h2>
+                    <h3>Replace existing points with midpoints</h3>
+                    <img src="img/dual.png">
+                </section>
+                <section>
+                    <h2>Smoothing (1 Pass)</h2>
+                    <h3>Refine &rArr; Dual &rArr; Dual</h3>
+                </section>
+                <section>
+                    <h2>Cubic B-Spline(ish)</h2>
+                    <h3>RDD &rArr; RDD &rArr; RDD</h3>
+                </section>
+                <section>
+                    <h2>Why this is cool</h2>
+                    <ul>
+                        <li>It can be used for other things like animation</li>
+                        <li>It can be tuned for performance vs. smoothness</li>
+                        <li>It can be lazily evaluated</li>
+                        <li>It is trivial to make parallel</li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Further Reading</h2>
+                    <p><a href="http://diveintohtml5.info/canvas.html">Dive Into HTML5</a></p>
+                    <p><a href="http://www.html5rocks.com/en/tutorials/canvas/performance/">Improving HTML5 Canvas Performance</a></p>
+                    <p>Ask questions in #canvas</p>
+                </section>
+                
+                <script src="reveal.js/lib/js/head.min.js"></script>
+                <script src="reveal.js/js/reveal.min.js"></script>
+                
+                <script>
+                    Reveal.initialize({
+                        controls: true,
+                        progress: true,
+                        history: true,
+                        center: true,
+                        dependencies: [{
+                            src: 'reveal.js/plugin/highlight/highlight.js',
+                            async: true,
+                            callback: function() {
+                                hljs.initHighlightingOnLoad();
+                            }
+                        }]
+                    });
+                </script>
+            </div>
+        </div>
+    </body>
+</html>
